@@ -4,11 +4,17 @@
 \usetikzlibrary{shadows}
 \usetikzlibrary{positioning}
 \usetikzlibrary{calc}
-\usepackage[letterpaper,margin=0.5in,tmargin=1.0in,bmargin=1.0in]{geometry}
+\usepackage[letterpaper,margin=0.75in,tmargin=0.75in,bmargin=0.75in]{geometry}
 \usepackage{pbox}
+\usepackage{xltxtra}
 
-\input{commands}
+\setmainfont{texgyreheros-regular.otf}
+
+\definecolor{leftcolor}{RGB}{204,255,255}
+\definecolor{rightcolor}{RGB}{229,255,204}
+
+\input{latexFormatting/commands}
 
 \begin{document}
-\include{quotes}
+\include{textFiles/quotes}
 \end{document}
