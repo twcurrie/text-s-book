@@ -1,0 +1,83 @@
+\documentclass{article}
+\usepackage{tikz}
+\usetikzlibrary{shapes.callouts}
+\usetikzlibrary{shadows}
+\usetikzlibrary{positioning}
+\usetikzlibrary{calc}
+\usepackage[letterpaper,margin=0.5in,tmargin=1.0in,bmargin=1.0in]{geometry}
+\usepackage{pbox}
+
+\definecolor{lightblue}{RGB}{50,50,205}
+\definecolor{lightgreen}{RGB}{50,205,50}
+
+\newlength\maxWidth
+\setlength\maxWidth{3in}
+\newlength\timestampWidth
+
+\newcommand*{\SetMaxWidth}[3]{
+    \settowidth{#1}{#2}
+    \settowidth{\timestampWidth}{\footnotesize #3}
+    \ifdim#1<\timestampWidth
+        \setlength{#1}{\timestampWidth}
+    \fi
+    \ifdim#1>\maxWidth
+        \setlength{#1}{\maxWidth}
+    \fi
+}
+
+\newlength\widthToUse
+\newlength\heightToSkip
+
+\newcommand\quoteLeft[2]{%
+    \SetMaxWidth{\widthToUse}{#1}{#2}
+    \setbox0=\vbox{\parbox[b]{1.1\widthToUse}{#1}}
+    \tikz[remember picture]{
+        \node[anchor=north west,overlay,rectangle,
+                rounded corners,drop shadow={opacity=0.5},
+                fill=blue!30,text width=\widthToUse]
+            at (0,0) {\footnotesize#2 \\ \vspace{8pt} \normalsize#1};}
+     \setlength{\heightToSkip}{\ht0}
+     \vspace{1.75\heightToSkip}
+}
+
+\newcommand\quoteRight[2]{%
+    \SetMaxWidth{\widthToUse}{#1}{#2}
+    \hspace{6.5in}\hspace{-\widthToUse}
+    \setbox0=\vbox{\parbox[b]{1.1\widthToUse}{#1}}
+    \tikz[remember picture]{
+        \node[anchor=north west,overlay,rectangle,
+                rounded corners,drop shadow={opacity=0.5},
+                fill=lightgreen!30,text width=\widthToUse]
+            at (0,0) {\footnotesize#2 \\ \vspace{8pt} \normalsize#1};}
+        
+    \setlength{\heightToSkip}{\ht0}
+    \vspace{1.75\heightToSkip}
+}
+
+\begin{document}
+\section*{\huge Month }
+\quoteLeft{
+Hey Trevor this is David, we just spoke. Can you tell me the location of your tickets do I can let my sister know 
+}
+{
+2013 Dec 13 23:08:13 
+}
+
+\quoteRight{
+Yes sir, I can.  They're in Section 24, Row 2 
+}{
+2013 Dec 13 23:11:35
+}
+
+\quoteLeft{
+Thanks
+}{
+2013 Dec 13 23:12:11
+}
+
+\quoteRight{
+Its the corner of the endzone 
+}{
+2013 Dec 13 23:12:31
+}
+\end{document}
