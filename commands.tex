@@ -1,0 +1,46 @@
+\definecolor{leftcolor}{RGB}{50,50,205}
+\definecolor{rightcolor}{RGB}{50,205,50}
+
+\newlength\maxWidth
+\setlength\maxWidth{3in}
+\newlength\timestampWidth
+
+\newcommand*{\SetMaxWidth}[3]{
+    \settowidth{#1}{#2}
+    \settowidth{\timestampWidth}{\footnotesize #3}
+    \ifdim#1<\timestampWidth
+        \setlength{#1}{\timestampWidth}
+    \fi
+    \ifdim#1>\maxWidth
+        \setlength{#1}{\maxWidth}
+    \fi
+}
+
+\newlength\widthToUse
+
+\newcommand\quoteLeft[2]{%
+    \SetMaxWidth{\widthToUse}{#1}{#2}
+    \setbox0=\vbox{\parbox[b]{1.1\widthToUse}{#1}}
+    \tikz[remember picture]{
+        \node[anchor=north west,overlay,rectangle,
+                rounded corners,drop shadow={opacity=0.5},
+                fill=blue!30,text width=\widthToUse]
+            at (0,0) {\footnotesize#2 \\ \vspace{8pt} \normalsize#1};}
+    \vspace{0.25in} 
+    \vspace{\ht0}
+}
+
+\newcommand\quoteRight[2]{%
+    \SetMaxWidth{\widthToUse}{#1}{#2}
+    \hspace{6.5in}\hspace{-\widthToUse}
+    \setbox0=\vbox{\parbox[b]{1.1\widthToUse}{#1}}
+    \tikz[remember picture]{
+        \node[anchor=north west,overlay,rectangle,
+                rounded corners,drop shadow={opacity=0.5},
+                fill=rightcolor!30,text width=\widthToUse]
+            at (0,0) {\footnotesize#2 \\ \vspace{8pt} \normalsize#1};}
+     \vspace{0.25in} 
+     \vspace{\ht0}
+}
+
+
