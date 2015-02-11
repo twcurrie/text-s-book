@@ -1,3 +1,6 @@
+\definecolor{leftcolor}{RGB}{204,255,255}
+\definecolor{rightcolor}{RGB}{204,255,229}
+
 \newlength\maxWidth
 \setlength\maxWidth{3in}
 \newlength\timestampWidth
@@ -21,7 +24,7 @@
     \tikz[remember picture]{
         \node[anchor=north west,overlay,rectangle,
                 rounded corners,drop shadow={opacity=0.5},
-                fill=blue!30,text width=\widthToUse]
+                fill=leftcolor,text width=\widthToUse]
             at (0,0) {\footnotesize#2 \\ \vspace{8pt} \normalsize#1};}
     \vspace{0.25in} 
     \vspace{\ht0}
@@ -34,7 +37,7 @@
     \tikz[remember picture]{
         \node[anchor=north west,overlay,rectangle,
                 rounded corners,drop shadow={opacity=0.5},
-                fill=rightcolor!30,text width=\widthToUse]
+                fill=rightcolor,text width=\widthToUse]
             at (0,0) {\footnotesize#2 \\ \vspace{8pt} \normalsize#1};}
      \vspace{0.25in} 
      \vspace{\ht0}
