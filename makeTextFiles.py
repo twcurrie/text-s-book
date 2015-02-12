@@ -4,25 +4,42 @@ import os
 import sys
 import shutil
 import re
+import pycurl
 from dateutil.parser import *
 from dateutil.tz import *
 from datetime import datetime,time
 from unidecode import unidecode
 
-url = re.compile(r"(https://[^ ]+)")
+url = re.compile(r"(https://[^ ]+.jpg)")
 
 class TextMessage(object):
     def __init__(self,time,sender,message=None,picture=None)
         self.time = datetime.strptime(time,"%Y %b %d %H:%M:%S")
-        if sender == 'Me':
+        
+        if sender == 'Me' or sender == '+16267204969':
             sender = "Trevor Currie"
         self.sender = sender
         
         self.message = message
         self.picture = picture
+        
+        if picture is not None:
+            download_picture(picture)
 
     def __str__(self):
         return self.sender, self.message
+
+    def download_picture(self):
+        picture_directory = '~/Projects/TextsBook/textFiles/pictures/'
+        file_name = picture_directory + \
+                strftime(self.time,"%Y_%b_%d_%H_%M_%S") +\
+                + ".jpg"
+        with open(file_name, 'wb') as f:
+            c = pycurl.Curl()
+            c.setopt(c.URL, self.picture)
+            c.setopt(c.WRITEDATA, f)
+            c.perform()
+            c.close()
 
     def print_to_latex_file(self,file_name,right):
         with open(file_name,'a') as messages_file:
@@ -52,7 +69,6 @@ class Conversation(object)
                     text_message_parts = text_message.split(";")
                     sender = text_message_parts[0]
                     message = text_message_parts[1]
-                    messages = []
                                                                        
                     time = text_message_parts[2]
                     
@@ -62,17 +78,13 @@ class Conversation(object)
                         for picture_link in picture_links:
                             split_message = message.split(picture_link)
                             message = split_message[1]
-                            messages.append(split_message[0])
-                            messages.append(picture_link)
-
+                            self.text_messages.append(\
+                                    TextMessage(time, sender, message = split_message[0]))
+                            self.text_messages.append(\
+                                    TextMessage(time, sender, picture = picture_link))
                     else:
-                        messages.append(message)
-
-                    for message in messages:
-                        if url.search(message) is None:
-                            self.text_message.append(TextMessage(time,sender,message=message))
-                        else:
-                            self.text_message.append(TextMessage(time,sender,picture=message))
+                        self.text_messages.append(\
+                                 TextMessage(time, sender, message=message))
 
         self.sort_messages()
     
@@ -86,8 +98,6 @@ class Conversation(object)
     def sort_messages(self):
         self.messages.sort(key=lambda text: text.time)#, reverse=True)
 
-
-    
 
 if  __name__ =='__main__':
     current_directory = os.path.abspath(os.curdir)	
