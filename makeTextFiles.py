@@ -9,9 +9,13 @@ from dateutil.tz import *
 from datetime import datetime,time
 from unidecode import unidecode
 
+url = re.compile(r"(https://[^ ]+)")
+
 class TextMessage(object):
     def __init__(self,time,sender,message=None,picture=None)
         self.time = datetime.strptime(time,"%Y %b %d %H:%M:%S")
+        if sender == 'Me':
+            sender = "Trevor Currie"
         self.sender = sender
         
         self.message = message
@@ -41,15 +45,35 @@ class TextMessage(object):
 
 class Conversation(object)
     def __init__(self,conversation_file):
-        self.messages = []
-        # if conversation_file exists
-        #    open file
-        #       read line
-        #       parse text message
-        #       if text has url, 
-        #           split text up into two or three messages
-        #       save as textMessage object
-        #       self.messages.append(text_message)
+        self.text_messages = []
+        if os.path.exists(conversation_file):
+            with open(conversation_file,'r') as conversation:
+                for text_message in conversation:
+                    text_message_parts = text_message.split(";")
+                    sender = text_message_parts[0]
+                    message = text_message_parts[1]
+                    messages = []
+                                                                       
+                    time = text_message_parts[2]
+                    
+                    picture_links = url.findall(message)
+                                                          
+                    if not picture_links:
+                        for picture_link in picture_links:
+                            split_message = message.split(picture_link)
+                            message = split_message[1]
+                            messages.append(split_message[0])
+                            messages.append(picture_link)
+
+                    else:
+                        messages.append(message)
+
+                    for message in messages:
+                        if url.search(message) is None:
+                            self.text_message.append(TextMessage(time,sender,message=message))
+                        else:
+                            self.text_message.append(TextMessage(time,sender,picture=message))
+
         self.sort_messages()
     
     def __add__(self,other):
@@ -61,6 +85,9 @@ class Conversation(object)
     
     def sort_messages(self):
         self.messages.sort(key=lambda text: text.time)#, reverse=True)
+
+
+    
 
 if  __name__ =='__main__':
     current_directory = os.path.abspath(os.curdir)	
