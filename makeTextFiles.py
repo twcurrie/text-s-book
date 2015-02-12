@@ -137,12 +137,12 @@ class TextMessage(object):
                     message_parts = []
                     for link in link_list:
                         split_message = message.split(link)
-                        
                         message_parts.append(latex.replace_escape_characters(split_message[0]))
                         message_parts.append("\url{"+link+"}")
                         message = split_message[1]
                     message = " ".join(message_parts)
-                
+                else:
+                    message = latex.replace_escape_characters(message)
                 messages_file.write(message)
             
             messages_file.write("\n}{")
