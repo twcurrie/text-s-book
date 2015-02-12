@@ -7,45 +7,43 @@ import re
 import pycurl
 from dateutil.parser import *
 from dateutil.tz import *
-from datetime import datetime,time
+from datetime import datetime
+import time
 from unidecode import unidecode
 
-url = re.compile(r"(https://[^ ]+.jpg)")
+class Picture(object):
+    jpg_search = re.compile(r"(https://[^ ]+.jpg)")
+    png_search = re.compile(r"(https://[^ ]+.png)")
+    
+    def __init__(self,url,send_time):
+        self.url = url
+        self.send_time = send_time
+        png = self.png_search.findall(url)
+        jpg = self.jpg_search.findall(url)
+        if png:
+            self.kind = '.png'
+        elif jpg:
+            self.kind = '.jpg'
+        else:
+            self.kind = 'Unknown'
 
-class TextMessage(object):
-    def __init__(self,time,sender,message=None,picture=None):
-        """Set up text message with time, sender, and a message or a picture"""
-        self.time = datetime.strptime(time,"%Y %b %d %H:%M:%S")
-        
-        if sender == 'Me' or sender == '+16267204969':
-            sender = "Trevor Currie"
-        self.sender = sender
-        
-        self.message = message
-        self.picture = picture
-        
-        if picture is not None:
-            try:
-                download_picture(picture)
-            except ReferenceError:
-                self.picture = None
-
-    def __str__(self):
-        """Prints out text message as sender and message"""
-        return self.sender, self.message
-
-    def download_picture(self):
+        try:
+            self.picture.download_picture(self.send_time)
+        except ReferenceError:
+            self.picture.file_name = None
+    
+    def download_picture(self)
         """Downloads picture from given link"""
         picture_directory = '~/Projects/TextsBook/textFiles/pictures/'
         file_name = picture_directory + \
-                datetime.strftime("%Y_%b_%d_%H_%M_%S",self.time) +\
-                + ".jpg"
+                datetime.strftime(self.send_time,"%Y_%b_%d_%H_%M_%S")\
+                + self.kind
         try:
             with open(file_name, 'wb') as f:
                 c = pycurl.Curl()
                 print "Downloading picture"
-                print self.picture
-                c.setopt(c.URL, self.picture)
+                print self.url
+                c.setopt(c.URL, self.url)
                 c.setopt(c.WRITEDATA, f)
                 c.perform()
                 c.close()
@@ -53,14 +51,42 @@ class TextMessage(object):
             print file_name
         except:
             raise ReferenceError
+        return file_name
 
+    def get_file_name(self):
+        return self.file_name
 
+class TextMessage(object):
+    def __init__(self,send_time,sender,message=None,picture_link=None):
+        """Set up text message with time, sender, and a message or a picture"""
+        self.send_time = datetime.strptime(send_time,"%Y %b %d %H:%M:%S")
+
+        if sender == 'Me' or sender == '+16267204969':
+            sender = "Trevor Currie"
+        self.sender = sender
+        
+        self.message = message
+        
+        if picture_link is not None:
+            self.picture = Picture(picture_link)
+        print self.sender, self.message, self.send_time
+
+    def __str__(self):
+        """Prints out text message as sender and message"""
+        return self.sender, self.message
+    
+    def __repr__(self):
+        return '{}: {} {} {}'.format(self.__class__.__name__,
+                                     self.sender,
+                                     self.message,
+                                     self.send_time)
+ 
     def print_to_latex_file(self,file_name,print_right):
         """Prints message to a tex file at file_name"""
         if os.path.exists(file_name):
             start = "\n"
         else:
-            start = "\chapter{"+datetime.strftime("%B",self.time)+"}\n"
+            start = "\chapter{"+datetime.strftime(self.send_time,"%B")+"}\n"
         try:
             with open(file_name,'a') as messages_file:
                 messages_file.write(start)
@@ -71,80 +97,76 @@ class TextMessage(object):
 
                 if self.picture is not None:
                     messages_file.write("\includegraphics[\maxWidth]{")
-                    messages_file.write(self.picture)
+                    messages_file.write(self.picture.filename)
                     messages_file.write("}")
                 elif self.message is not None:
                     messages_file.write(self.message)
                 
                 messages_file.write("\n}{")
-                messages_file.write(datetime.strftime("%d %b %Y %I:%M:%S%p",self.time))
+                messages_file.write(datetime.strftime(self.send_time,"%d %b %Y %I:%M:%S%p"))
                 messages_file.write("}\n")
         except:
-            print "Error in printing to file: "+messages_file
+            print "Error in printing to file: "+file_name
 
 class Conversation(object):
     """Stores list of text messages"""
-    def __init__(self,conversation_file):
+    def __init__(self,conversation_file=None):
         """Initialize conversation by reading text message files"""
         self.text_messages = []
 
-        if os.path.exists(conversation_file):
-            with open(conversation_file,'r') as conversation:
-                for text_message in conversation:
-                    text_message_parts = text_message.split(";")
-                    sender = text_message_parts[0]
-                    message = text_message_parts[1]
-                                                                       
-                    time = text_message_parts[2].strip()
-                    
-                    picture_links = url.findall(message)
-                                                          
-                    if picture_links:
-                        for picture_link in picture_links:
-                            split_message = message.split(picture_link)
-                            message = split_message[1]
+        if conversation_file is not None:
+            if os.path.exists(conversation_file):
+                with open(conversation_file,'r') as conversation:
+                    for text_message in conversation:
+                        print text_message
+                        text_message_parts = text_message.split("(_*_) ")
+                        sender = text_message_parts[0]
+                        message = text_message_parts[1]
+                                                                           
+                        send_time = text_message_parts[2].strip()
+                        
+                        picture_links = Picture.png_search.findall(message)
+                        picture_links += Picture.jpg_search.findall(message)
+                                                              
+                        if picture_links:
+                            for link in picture_links:
+                                split_message = message.split(link)
+                                message = split_message[1]
+                                self.text_messages.append(\
+                                        TextMessage(send_time, sender, \
+                                        message = split_message[0]))
+                                self.text_messages.append(\
+                                        TextMessage(send_time, sender, \
+                                        picture_link = link))
+                        else:
                             self.text_messages.append(\
-                                    TextMessage(time, sender, \
-                                    message = split_message[0]))
-                            self.text_messages.append(\
-                                    TextMessage(time, sender, \
-                                    picture = picture_link))
-                    else:
-                        self.text_messages.append(\
-                                 TextMessage(time, sender, \
-                                 message=message))
+                                     TextMessage(send_time, sender, \
+                                     message=message))
+            else:
+                print conversation_file+" does not exist"
         else:
-            print conversation_file+" does not exist"
+            print "empty conversation created"
 
         self.sort_messages()
-    
-    def __add__(self,other):
-        """ Adds two conversation objects together by combining 
-            their lists"""
-        
-        if type(other) == type(self):
-            raise TypeError
-        else:
-            self.text_messages += other.text_messages
-            self.sort_messages()
     
     def get_time_of_first_message(self):
         """ Returns the earliest time in the conversation"""
-        
-        self.sort_messages()
-        return self.text_messages[0].time
+        return self.text_messages[0].send_time
+
+    def combine_conversations(self,another_conversation):
+        self.text_messages += another_conversation.text_messages
 
     def sort_messages(self):
         """ Sorts messages by timestamp """
-        
-        self.text_messages.sort(key=lambda text: text.time)#, reverse=True)
+        self.text_messages.sort(key=lambda item: item.send_time)
 
     def print_messages_to_latex(self, user):
         """ Prints the latex format of 
         each message in conversation."""
         
-        conversation_directory = "~/Projects/TextsBook/textFiles/"
-        conversation_file = datetime.strftime(self.get_time_of_first_message(),"%B")+".tex"
+        conversation_directory = "/home/twcurrie/Projects/TextsBook/textFiles/"
+        time = self.get_time_of_first_message() 
+        conversation_file = datetime.strftime(time,"%B")+".tex"
         for message in self.text_messages:
             if message.sender == user:
                 message.print_to_latex_file(conversation_file,True)
@@ -158,15 +180,18 @@ if __name__ == '__main__':
     walk_dir = texts_directory+person
     
     print walk_dir
+    conversations = Conversation()    
     for root,dirs,files in os.walk(walk_dir):
         for name in files:
             if "." not in name:
                 print os.path.join(root,name)
                 conversation_from_file = Conversation(os.path.join(root,name))
-                conversation_from_file.print_messages_to_latex(person)
-                print len(conversation_from_file.text_messages)
+                conversations.combine_conversations(conversation_from_file)
+
+    conversations.print_messages_to_latex(person)
 
 
+    
 
 
          
