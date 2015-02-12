@@ -4,12 +4,25 @@ import os
 import sys
 import shutil
 import re
+import string
 import pycurl
 from dateutil.parser import *
 from dateutil.tz import *
 from datetime import datetime
 import time
 from unidecode import unidecode
+
+class Latex(object):
+    escape_characters = {'%':'\%','$':'\$','{':'\{','_':'\_',\
+                         '|':'\\textbar','>':'\\textgreater','-':'\textendash',\
+                         '#':'\#','&':'\&','}':'\}','\\':'\\textbackslash',\
+                         '>':'\\textless'}
+
+    def replace_escape_characters(self,string_to_replace):
+        for character in Latex.escape_characters:
+            replaced_string = string.replace(string_to_replace,character,\
+                                      Latex.escape_characters[character])
+        return replaced_string
 
 class Picture(object):
     jpg_search = re.compile(r"(https://[^ ]+.jpg)")
@@ -28,47 +41,57 @@ class Picture(object):
             self.kind = 'Unknown'
 
         try:
-            self.picture.download_picture(self.send_time)
+            self.file_name = self.download_picture()
         except ReferenceError:
-            self.picture.file_name = None
+            self.file_name = None
     
-    def download_picture(self)
+    def download_picture(self):
         """Downloads picture from given link"""
-        picture_directory = '~/Projects/TextsBook/textFiles/pictures/'
+        # This will have to be generalized as well
+        picture_directory = '/home/twcurrie/Projects/TextsBook/textFiles/pictures/'
         file_name = picture_directory + \
-                datetime.strftime(self.send_time,"%Y_%b_%d_%H_%M_%S")\
+                self.send_time.strftime("%Y_%b_%d_%H_%M_%S")\
                 + self.kind
-        try:
-            with open(file_name, 'wb') as f:
-                c = pycurl.Curl()
-                print "Downloading picture"
-                print self.url
-                c.setopt(c.URL, self.url)
-                c.setopt(c.WRITEDATA, f)
-                c.perform()
-                c.close()
-            print "Saved file"
-            print file_name
-        except:
-            raise ReferenceError
+        if not os.path.exists(file_name):
+            try:
+                with open(file_name, 'wb') as f:
+                    c = pycurl.Curl()
+                    print "Downloading picture"
+                    print self.url
+                    c.setopt(c.URL, self.url)
+                    c.setopt(c.WRITEDATA, f)
+                    c.perform()
+                    c.close()
+                print "Saved file"
+                print file_name
+            except:
+                print "Error downloading file"
+                raise ReferenceError
+        else:
+            print file_name + " already exists"
         return file_name
 
     def get_file_name(self):
         return self.file_name
 
 class TextMessage(object):
-    def __init__(self,send_time,sender,message=None,picture_link=None):
+    https_search = re.compile(r"(https://[^ ]+)")
+    http_search = re.compile(r"(http://[^ ]+)")
+
+    def __init__(self,string_time,sender,message=None,picture_link=None):
         """Set up text message with time, sender, and a message or a picture"""
-        self.send_time = datetime.strptime(send_time,"%Y %b %d %H:%M:%S")
+        self.send_time = datetime.strptime(string_time,"%Y %b %d %H:%M:%S")
 
         if sender == 'Me' or sender == '+16267204969':
             sender = "Trevor Currie"
-        self.sender = sender
+            self.sender = "Trevor Currie"
+        else:
+            self.sender = sender
         
         self.message = message
         
         if picture_link is not None:
-            self.picture = Picture(picture_link)
+            self.picture = Picture(picture_link,self.send_time)
         print self.sender, self.message, self.send_time
 
     def __str__(self):
@@ -81,32 +104,50 @@ class TextMessage(object):
                                      self.message,
                                      self.send_time)
  
-    def print_to_latex_file(self,file_name,print_right):
+    def print_to_latex_file(self,file_dir,print_right):
         """Prints message to a tex file at file_name"""
+        latex = Latex()
+        month = self.send_time.strftime("%B")
+        year = self.send_time.strftime("%Y")
+        file_name = file_dir + month + "_" + year + ".tex"
+
         if os.path.exists(file_name):
             start = "\n"
         else:
-            start = "\chapter{"+datetime.strftime(self.send_time,"%B")+"}\n"
-        try:
-            with open(file_name,'a') as messages_file:
-                messages_file.write(start)
-                if print_right == True: 
-                    messages_file.write("\quoteRight{\n")
-                else:
-                    messages_file.write("\quoteLeft{\n")
-
-                if self.picture is not None:
-                    messages_file.write("\includegraphics[\maxWidth]{")
-                    messages_file.write(self.picture.filename)
-                    messages_file.write("}")
-                elif self.message is not None:
-                    messages_file.write(self.message)
+            start = "\chapter{"+month+"}\n"
+        print file_name
+        
+        with open(file_name,'a') as messages_file:
+            messages_file.write(start)
+            if print_right == True: 
+                messages_file.write("\quoteRight{\n")
+            else:
+                messages_file.write("\quoteLeft{\n")
+            
+            if hasattr(self,"picture"):
+                messages_file.write("\includegraphics[\maxWidth]{")
+                messages_file.write(self.picture.file_name)
+                messages_file.write("}")
+            elif hasattr(self,"message"):
+                message = self.message
                 
-                messages_file.write("\n}{")
-                messages_file.write(datetime.strftime(self.send_time,"%d %b %Y %I:%M:%S%p"))
-                messages_file.write("}\n")
-        except:
-            print "Error in printing to file: "+file_name
+                link_list = self.https_search.findall(message)
+                link_list +=self.http_search.findall(message)
+                if link_list:
+                    message_parts = []
+                    for link in link_list:
+                        split_message = message.split(link)
+                        
+                        message_parts.append(latex.replace_escape_characters(split_message[0]))
+                        message_parts.append("\url{"+link+"}")
+                        message = split_message[1]
+                    message = " ".join(message_parts)
+                
+                messages_file.write(message)
+            
+            messages_file.write("\n}{")
+            messages_file.write(self.send_time.strftime("%d %b %Y %I:%M:%S%p"))
+            messages_file.write("}\n")
 
 class Conversation(object):
     """Stores list of text messages"""
@@ -177,20 +218,19 @@ class Conversation(object):
     def print_messages_to_latex(self, user):
         """ Prints the latex format of 
         each message in conversation."""
+        # Will likely need to generalize this string:
+        conversation_dir = "/home/twcurrie/Projects/TextsBook/textFiles/"
         
-        conversation_directory = "/home/twcurrie/Projects/TextsBook/textFiles/"
-        time = self.get_time_of_first_message() 
-        conversation_file = datetime.strftime(time,"%B")+".tex"
         for message in self.text_messages:
             if message.sender == user:
-                message.print_to_latex_file(conversation_file,True)
+                message.print_to_latex_file(conversation_dir,True)
             else:
-                message.print_to_latex_file(conversation_file,False)
+                message.print_to_latex_file(conversation_dir,False)
 
 if __name__ == '__main__':
     texts_directory = '/home/twcurrie/Projects/Voice/Texts/'
     person = 'Klaudia Helena Zarako-Zarakowski'
-    
+    user = 'Trevor Currie'
     walk_dir = texts_directory+person
     
     print walk_dir
@@ -201,5 +241,6 @@ if __name__ == '__main__':
                 print os.path.join(root,name)
                 conversation_from_file = Conversation(os.path.join(root,name))
                 conversations.combine_conversations(conversation_from_file)
-
-    conversations.print_messages_to_latex(person)
+    
+    conversations.sort_messages()
+    conversations.print_messages_to_latex(user)
