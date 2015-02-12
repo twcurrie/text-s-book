@@ -119,22 +119,21 @@ class Conversation(object):
                 with open(conversation_file,'r') as conversation:
                     for text_message in conversation:
                         print text_message
-                        text_message_parts = text_message.split("(_*_) ")
-                        sender = text_message_parts[0]
-                        message = text_message_parts[1]
-                                                                           
-                        send_time = text_message_parts[2].strip()
-                        
-                        picture_links = Picture.png_search.findall(message)
-                        picture_links += Picture.jpg_search.findall(message)
-                                                              
+ 
+                        sender,message,send_time = \
+                                self.split_up_message(text_message,"(_*_)")
+
+                        picture_links = self.find_all_picture_links(message)
+
                         if picture_links:
                             for link in picture_links:
                                 split_message = message.split(link)
                                 message = split_message[1]
+                                
                                 self.text_messages.append(\
                                         TextMessage(send_time, sender, \
                                         message = split_message[0]))
+
                                 self.text_messages.append(\
                                         TextMessage(send_time, sender, \
                                         picture_link = link))
@@ -149,9 +148,24 @@ class Conversation(object):
 
         self.sort_messages()
     
+    def split_up_message(self,text_message,delimiter):
+        """ Splits up message into its parts, by the delimiter """
+        text_message_parts = text_message.split(delimiter)
+        sender = text_message_parts[0]
+        message = text_message_parts[1]
+                                                       
+        send_time = text_message_parts[2].strip()
+        return sender,message,send_time
+
     def get_time_of_first_message(self):
         """ Returns the earliest time in the conversation"""
         return self.text_messages[0].send_time
+
+    def find_all_picture_links(self,message):
+        """ Returns all links in message """
+        picture_links = Picture.png_search.findall(message)
+        picture_links += Picture.jpg_search.findall(message)
+        return picture_links 
 
     def combine_conversations(self,another_conversation):
         self.text_messages += another_conversation.text_messages
@@ -189,11 +203,3 @@ if __name__ == '__main__':
                 conversations.combine_conversations(conversation_from_file)
 
     conversations.print_messages_to_latex(person)
-
-
-    
-
-
-         
-
-
