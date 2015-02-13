@@ -13,8 +13,9 @@ import time
 from unidecode import unidecode
 
 class Latex(object):
+    @staticmethod
     escape_characters = {'%':'\%','$':'\$','{':'\{','_':'\_',\
-                         '|':'\\textbar ','>':'\\textgreater ','-':'\\textendash ',\
+                         '|':'\\textbar ','<':'\\textgreater ','-':'\\textendash ',\
                          '#':'\#','&':'\&','}':'\}','\\':'\\textbackslash ',\
                          '>':'\\textless '}
 
@@ -30,16 +31,20 @@ class Latex(object):
 class Picture(object):
     jpg_search = re.compile(r"(https://[^ ]+.jpg)")
     png_search = re.compile(r"(https://[^ ]+.png)")
+    gif_search = re.compile(r"(https://[^ ]+.gif)")
     
     def __init__(self,url,send_time):
         self.url = url
         self.send_time = send_time
         png = self.png_search.findall(url)
         jpg = self.jpg_search.findall(url)
+        gif = self.gif_search.findall(url)
         if png:
             self.kind = '.png'
         elif jpg:
             self.kind = '.jpg'
+        elif gif:
+            self.kind = '.gif'
         else:
             self.kind = 'Unknown'
 
@@ -104,7 +109,6 @@ class TextMessage(object):
  
     def print_to_latex_file(self,file_dir,print_right):
         """Prints message to a tex file at file_name"""
-        latex = Latex()
         month = self.send_time.strftime("%B")
         year = self.send_time.strftime("%Y")
         file_name = file_dir + month + "_" + year + ".tex"
@@ -134,12 +138,13 @@ class TextMessage(object):
                     message_parts = []
                     for link in link_list:
                         split_message = message.split(link)
-                        message_parts.append(latex.replace_escape_characters(split_message[0]))
+                        message_parts.append(Latex.replace_escape_characters(split_message[0]))
+                        link = Latex.replace_escape_characters(link)
                         message_parts.append("\url{"+link+"}")
                         message = split_message[1]
                     message = " ".join(message_parts)
                 else:
-                    message = latex.replace_escape_characters(self.message)
+                    message = Latex.replace_escape_characters(self.message)
                 messages_file.write(message)
             
             messages_file.write("\n}{")
@@ -159,7 +164,7 @@ class Conversation(object):
                 with open(conversation_file,'r') as conversation:
                     for text_message in conversation:
                         sender,message,send_time = \
-                                self.split_up_message(text_message,"(_*_)")
+                                self.split_up_line_in_file(text_message,"(_*_)")
 
                         picture_links = self.find_all_picture_links(message)
 
@@ -168,17 +173,15 @@ class Conversation(object):
                                 split_message = message.split(link)
                                 message = split_message[1]
                                 
-                                self.text_messages.append(\
-                                        TextMessage(send_time, sender, \
-                                        message = split_message[0]))
+                                self.save_text(send_time,sender,\
+                                            message = split_message[0])
 
                                 self.text_messages.append(\
                                         TextMessage(send_time, sender, \
                                         picture_link = link))
                         else:
-                            self.text_messages.append(\
-                                     TextMessage(send_time, sender, \
-                                     message=message))
+                            self.save_text(send_time,sender,\
+                                            message = split_message[0])
             else:
                 print conversation_file+" does not exist"
         else:
@@ -186,7 +189,40 @@ class Conversation(object):
 
         self.sort_messages()
     
-    def split_up_message(self,text_message,delimiter):
+    def save_text(self,send_time,sender_name,text_message):
+        """ Creates message object and appends it to list """
+        character_limit = 160
+        text_messages = [text_message]
+        if len(text_message) > character_limit:
+            text_messages = self.split_up_messages(text_message,character_limit)
+ 
+        for text_message in text_messages:
+            split_text = TextMessage(send_time,sender_name, message = text_message)
+            self.text_messages.append(split_text)
+
+    def split_up_message(self, text_message, character_limit):
+        words = text_message.split(" ")
+        messages = []
+        while words:
+            message = words.pop(0)
+            message_length = len(message)
+            if message_length <= character_limit:
+                if len(words[0]) + message_length <= character_limit:
+                    message += " " + words.pop(0)
+                else:
+                    messages.append(message)
+            else:
+                while message:
+                    messages.append(message[:character_limit])
+                    message = message[character_limit:]
+
+        return messages
+
+
+        
+
+
+    def split_up_line_in_file(self,text_message,delimiter):
         """ Splits up message into its parts, by the delimiter """
         text_message_parts = text_message.split(delimiter)
         sender = text_message_parts[0]
