@@ -1,6 +1,12 @@
 \definecolor{leftcolor}{RGB}{204,255,255}
 \definecolor{rightcolor}{RGB}{204,255,229}
 
+\newcommand{\mychapter}[1]{
+    \setcounter{chapter}{0}
+    \setcounter{section}{0}
+    \chapter*{#1}
+    \addcontentsline{toc}{chapter}{#1}
+}
 \newlength\maxWidth
 \setlength\maxWidth{3in}
 \newlength\timestampWidth
@@ -26,7 +32,7 @@
                 rounded corners,drop shadow={opacity=0.5},
                 fill=leftcolor,text width=\widthToUse]
             at (0,0) {\footnotesize#2 \\ \vspace{8pt} \normalsize#1};}
-    \vspace{0.5in} 
+    \vspace{0.4in} 
     \vspace{\ht0}
 }
 
@@ -39,7 +45,7 @@
                 rounded corners,drop shadow={opacity=0.5},
                 fill=rightcolor,text width=\widthToUse]
             at (0,0) {\footnotesize#2 \\ \vspace{8pt} \normalsize#1};}
-     \vspace{0.5in} 
+     \vspace{0.4in} 
      \vspace{\ht0}
 }
 
