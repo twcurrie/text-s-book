@@ -14,15 +14,18 @@ from unidecode import unidecode
 
 class Latex(object):
     escape_characters = {'%':'\%','$':'\$','{':'\{','_':'\_',\
-                         '|':'\\textbar','>':'\\textgreater','-':'\textendash',\
-                         '#':'\#','&':'\&','}':'\}','\\':'\\textbackslash',\
-                         '>':'\\textless'}
+                         '|':'\\textbar ','>':'\\textgreater ','-':'\\textendash ',\
+                         '#':'\#','&':'\&','}':'\}','\\':'\\textbackslash ',\
+                         '>':'\\textless '}
 
     def replace_escape_characters(self,string_to_replace):
-        for character in Latex.escape_characters:
-            replaced_string = string.replace(string_to_replace,character,\
-                                      Latex.escape_characters[character])
-        return replaced_string
+        string_parts = list(string_to_replace)
+        for index,part in enumerate(string_parts):
+            for character in self.escape_characters:
+                if character in part:
+                    string_parts[index] = string.replace(part, character,\
+                                      self.escape_characters[character])
+        return ''.join(string_parts)
 
 class Picture(object):
     jpg_search = re.compile(r"(https://[^ ]+.jpg)")
@@ -47,7 +50,7 @@ class Picture(object):
     
     def download_picture(self):
         """Downloads picture from given link"""
-        # This will have to be generalized as well
+        #TODO: This will have to be generalized as well
         picture_directory = '/home/twcurrie/Projects/TextsBook/textFiles/pictures/'
         file_name = picture_directory + \
                 self.send_time.strftime("%Y_%b_%d_%H_%M_%S")\
@@ -82,17 +85,12 @@ class TextMessage(object):
         """Set up text message with time, sender, and a message or a picture"""
         self.send_time = datetime.strptime(string_time,"%Y %b %d %H:%M:%S")
 
-        if sender == 'Me' or sender == '+16267204969':
-            sender = "Trevor Currie"
-            self.sender = "Trevor Currie"
-        else:
-            self.sender = sender
+        self.sender = sender
         
         self.message = message
         
         if picture_link is not None:
             self.picture = Picture(picture_link,self.send_time)
-        print self.sender, self.message, self.send_time
 
     def __str__(self):
         """Prints out text message as sender and message"""
@@ -114,8 +112,8 @@ class TextMessage(object):
         if os.path.exists(file_name):
             start = "\n"
         else:
-            start = "\chapter{"+month+"}\n"
-        print file_name
+            start = "\chapter*{"+month+"}\n"
+            print file_name
         
         with open(file_name,'a') as messages_file:
             messages_file.write(start)
@@ -129,11 +127,10 @@ class TextMessage(object):
                 messages_file.write(self.picture.file_name)
                 messages_file.write("}")
             elif hasattr(self,"message"):
-                message = self.message
-                
-                link_list = self.https_search.findall(message)
-                link_list +=self.http_search.findall(message)
+                link_list = self.https_search.findall(self.message)
+                link_list +=self.http_search.findall(self.message)
                 if link_list:
+                    message = self.message
                     message_parts = []
                     for link in link_list:
                         split_message = message.split(link)
@@ -142,7 +139,7 @@ class TextMessage(object):
                         message = split_message[1]
                     message = " ".join(message_parts)
                 else:
-                    message = latex.replace_escape_characters(message)
+                    message = latex.replace_escape_characters(self.message)
                 messages_file.write(message)
             
             messages_file.write("\n}{")
@@ -157,10 +154,10 @@ class Conversation(object):
 
         if conversation_file is not None:
             if os.path.exists(conversation_file):
+                print "Reading file ...."
+                print conversation_file
                 with open(conversation_file,'r') as conversation:
                     for text_message in conversation:
-                        print text_message
- 
                         sender,message,send_time = \
                                 self.split_up_message(text_message,"(_*_)")
 
@@ -218,11 +215,17 @@ class Conversation(object):
     def print_messages_to_latex(self, user):
         """ Prints the latex format of 
         each message in conversation."""
-        # Will likely need to generalize this string:
+        #TODO: Will likely need to generalize this string:
         conversation_dir = "/home/twcurrie/Projects/TextsBook/textFiles/"
         
         for message in self.text_messages:
-            if message.sender == user:
+            sender = message.sender.strip().lower()
+            # TODO: Generalize this
+            if sender == 'me' or sender == '+16267204969' \
+                    or sender == "trevor w. currie":
+                sender = "trevor currie"
+
+            if sender == user.strip().lower():
                 message.print_to_latex_file(conversation_dir,True)
             else:
                 message.print_to_latex_file(conversation_dir,False)

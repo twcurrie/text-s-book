@@ -1,4 +1,4 @@
-\documentclass{article}
+\documentclass{report}
 \usepackage{tikz}
 \usetikzlibrary{shapes.callouts}
 \usetikzlibrary{shadows}
@@ -7,12 +7,21 @@
 \usepackage[letterpaper,margin=0.75in,tmargin=0.75in,bmargin=0.75in]{geometry}
 \usepackage{pbox}
 \usepackage{xltxtra}
+\usepackage{hyperref}
+
+\hypersetup{
+    colorlinks=false
+}
+\urlstyle{same}
 
 \setmainfont{Roboto-Thin.ttf}
 
 \input{latexFormatting/commands}
 
 \begin{document}
+%\input{title.tex}
+
+\tableofcontents{}
 \include{textFiles/January_2014}
 \include{textFiles/February_2014}
 \include{textFiles/March_2014}
