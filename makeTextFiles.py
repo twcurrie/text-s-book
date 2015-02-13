@@ -17,7 +17,7 @@ class Latex(object):
     escape_characters = {'%':'\%','$':'\$','{':'\{','_':'\_',\
                          '|':'\\textbar ','<':'\\textgreater ','-':'\\textendash ',\
                          '#':'\#','&':'\&','}':'\}','\\':'\\textbackslash ',\
-                         '>':'\\textless '}
+                         '>':'\\textless ', '^':'\\textasciicircum'}
 
     def replace_escape_characters(self,string_to_replace):
         string_parts = list(string_to_replace)
@@ -39,6 +39,7 @@ class Picture(object):
         png = self.png_search.findall(url)
         jpg = self.jpg_search.findall(url)
         gif = self.gif_search.findall(url)
+
         if png:
             self.kind = '.png'
         elif jpg:
@@ -201,6 +202,7 @@ class Conversation(object):
             self.text_messages.append(split_text)
 
     def split_up_message(self, text_message, character_limit):
+        """ Splits up message string to specified character limit"""
         words = text_message.split(" ")
         messages = []
         while words:
@@ -217,11 +219,7 @@ class Conversation(object):
                     message = message[character_limit:]
 
         return messages
-
-
         
-
-
     def split_up_line_in_file(self,text_message,delimiter):
         """ Splits up message into its parts, by the delimiter """
         text_message_parts = text_message.split(delimiter)
