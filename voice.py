@@ -10,6 +10,7 @@ from dateutil.tz import *
 from datetime import datetime,time
 from unidecode import unidecode
 from types import *
+from text_message import TextMessage, Sender
 
 class VoiceParser(object):
     """ Parses directory with Google Voice html files,
@@ -25,48 +26,46 @@ class VoiceParser(object):
         self.phonebook = {}
 
         if os.path.isdir(directory):
+            print "Opening "+directory+"..."
             for filename in os.listdir(directory):
-                try:
-                    soup = bs(open(directory+"/"+filename))
+               soup = bs(open(directory+"/"+filename))
 
-                    for message_to_parse in soup.find_all(class_="message"):
-                        get = {'name':self.get_name,'phone':self.get_phone,\
-                               'text':self.get_text,'time':self.get_time]
-                        
-                        for item in get:
-                            try:
-                                # Replace function in dict with value
-                                get[item] = get[item](message_to_parse)
-                            except:
-                                print "No "+item+" found in "+filename
-                                get[item] = ""
-                        
-                        # If function type still stored, not successful
-                        if get['name'] is not FunctionType and \
-                                get['number'] is not FunctionType:
-                            sender = Sender(get['phone'], get['name'])
-                            self.phonebook[get['phone']] = get['name']
-    		            
-                            if get['time'] is not FunctionType and \
-                                get['text'] is not FunctionType:
-                                
-                                message = TextMessage(get['time'], sender, get['text'])
+               for message_to_parse in soup.find_all(class_="message"):
+                   get = {'name':self.get_name,'phone':self.get_phone,\
+                          'text':self.get_text,'time':self.get_time}
+                   
+                   for item in get:
+                       try:
+                           get[item] = get[item](message_to_parse)
+                       except:
+                           print "No "+item+" found in "+filename
+                           get[item] = ""
+                   
+                   if get['name'] is not FunctionType and \
+                           get['phone'] is not FunctionType:
+                       sender = Sender(get['phone'], get['name'])
+                       
+                       if not self.phonebook.has_key(get['phone']):
+                           print "Added "+get['name']+" to phonebook"
+                           self.phonebook[get['phone']] = get['name']
+    	               
+                       if get['time'] is not FunctionType and \
+                           get['text'] is not FunctionType:
+                           
+                           message = TextMessage(get['time'], sender, get['text'])
 
-                                if self.conversations.has_key(sender):
-                                    self.conversations[sender].append(message)
-                                else:
-                                    self.conversations[sender] = [message]
-                except:
-                    raise IOError
+                           if self.conversations.has_key(sender):
+                               self.conversations[sender].append(message)
+                           else:
+                               self.conversations[sender] = [message]
 
     def sort_conversations(self):
         """ Sorts conversations in the dictionary's lists """
 
         for sender in self.conversations:
-            self.conversations[sender].sort(message key=lambda message: message.send_time)
+            self.conversations[sender].sort(key=lambda message: message.send_time)
     
-
-    def get_name(self, div)
+    def get_name(self, div):
         """ Parses name from div in Google Voice html file """
 
         name = ""
@@ -85,13 +84,13 @@ class VoiceParser(object):
     def get_text(self,div):
         """ Parses text from div in Google Voice html file """
         
-        return text = div.find('q').get_text() 
+        return div.find('q').get_text() 
 
     def get_time(self,div):
         """ Parses time stamp from div in Google Voice html file.
             Returns datetime object."""
         
-    	return time = parse(div.find(class_="dt").get_text())
+    	return parse(div.find(class_="dt").get_text())
 
     def check_and_make_directory(self, directory):
         """ Checks if directory exists, makes it if it doesn't """

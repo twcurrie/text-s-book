@@ -119,7 +119,7 @@ class TextMessage(object):
         
         if type(time) is str:
             self.send_time = datetime.strptime(time,"%Y %b %d %H:%M:%S")
-        elif isinstance(time,datetime):
+        elif isinstance(time,datetime.datetime):
             self.send_time = time
         else:
             print "Time not correctly formatted"
@@ -155,7 +155,7 @@ class TextMessage(object):
         """Returns time object """
         return self.send_time
 
-    def write_to_latex_file(self,file_dir,print_right):
+    def write_to_latex_file(self, file_dir, print_right):
         """Prints message to a tex file at file_name"""
 
         month = self.get_time_object().strftime("%B")
@@ -196,13 +196,8 @@ class TextMessage(object):
                         message = split_message[1]
 
                     message = " ".join(message_parts)
-
                 else:
                     message = Latex.replace_escape_characters(self.message)
-
                 messages_file.write(message)
-            
-            messages_file.write("\n}{")
-            messages_file.write(self.get_time_string())
-            messages_file.write("}\n")
+            messages_file.write("\n}{"+self.get_time_string()+"}\n")
 
