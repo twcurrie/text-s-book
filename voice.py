@@ -46,7 +46,7 @@ class VoiceParser(object):
                        sender = Sender(get['phone'], get['name'])
                        
                        if not self.phonebook.has_key(get['phone']):
-                           print "Added "+get['name']+" to phonebook"
+                           print "Added "+get['name']+" to phonebook "
                            self.phonebook[get['phone']] = get['name']
     	               
                        if get['time'] is not FunctionType and \
@@ -68,12 +68,10 @@ class VoiceParser(object):
     def get_name(self, div):
         """ Parses name from div in Google Voice html file """
 
-        name = ""
         try:
             name = div.find(class_="fn").get_text()
         except:
-            print "No name"
-
+            name = self.get_phone(div)
         return name
 
     def get_phone(self,div):
@@ -145,4 +143,4 @@ class VoiceParser(object):
 
 
 if __name__ == "__main__":
-    parser = VoiceParser("~/Projects/Voice/Texts/")
+    parser = VoiceParser("/home/twcurrie/Projects/Voice/Takeout/Voice/Calls")
