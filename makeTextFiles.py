@@ -142,8 +142,8 @@ class Conversation(object):
 
 if __name__ == '__main__':
     texts_directory = '/home/twcurrie/Projects/Voice/Texts/'
-    person = 'Klaudia Helena Zarako-Zarakowski'
-    user = 'Trevor Currie'
+    person = 'User 1'
+    user = 'User 2'
     walk_dir = texts_directory+person
     
     print walk_dir
